@@ -142,9 +142,11 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted, mode = "create", in
     >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Manual Journal Entry</DialogTitle>
+          <DialogTitle>{mode === "edit" ? "Edit Journal Entry" : "New Manual Journal Entry"}</DialogTitle>
           <DialogDescription>
-            Description and at least one audit attachment are required before posting. Entry must balance.
+            {mode === "edit"
+              ? "Edits are permitted only before approval. All changes are logged in the audit trail."
+              : "Description and at least one audit attachment are required before posting. Entry must balance."}
           </DialogDescription>
         </DialogHeader>
 
