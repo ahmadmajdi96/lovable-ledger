@@ -35,16 +35,25 @@ const entrySchema = z.object({
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onPosted: (entry: { description: string; reference: string; lines: DraftLine[] }) => void;
+  // create mode
+  onPosted?: (entry: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }) => void;
+  // edit mode
+  mode?: "create" | "edit";
+  initial?: {
+    description: string;
+    reference: string;
+    lines: { account: string; debit: number; credit: number }[];
+  };
+  onEdited?: (entry: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }) => void;
 }
 
-const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
-  const [description, setDescription] = useState("");
-  const [reference, setReference] = useState("");
-  const [lines, setLines] = useState<DraftLine[]>([
-    { account: "", debit: "", credit: "" },
-    { account: "", debit: "", credit: "" },
-  ]);
+const ManualJournalDialog = ({ open, onOpenChange, onPosted, mode = "create", initial, onEdited }: Props) => {
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [reference, setReference] = useState(initial?.reference ?? "");
+  const [lines, setLines] = useState<DraftLine[]>(
+    initial?.lines.map((l) => ({ account: l.account, debit: l.debit ? String(l.debit) : "", credit: l.credit ? String(l.credit) : "" }))
+      ?? [{ account: "", debit: "", credit: "" }, { account: "", debit: "", credit: "" }]
+  );
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -53,6 +62,7 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
   const balanced = totalDr === totalCr && totalDr > 0;
 
   const reset = () => {
+    if (mode === "edit") return;
     setDescription(""); setReference("");
     setLines([{ account: "", debit: "", credit: "" }, { account: "", debit: "", credit: "" }]);
     setFiles([]); setErrors({});
@@ -78,20 +88,18 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
   };
 
   const handlePost = () => {
-    const parsed = entrySchema.safeParse({
-      description,
-      reference,
-      lines: lines.map((l) => ({ account: l.account, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0 })),
-      attachments: files,
-    });
-
+    const lineObjs = lines.map((l) => ({ account: l.account, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0 }));
     const e: Record<string, string> = {};
+
+    const baseSchema = z.object({
+      description: z.string().trim().min(10, "Description must be at least 10 characters").max(500),
+      lines: z.array(lineSchema).min(2, "At least two lines required"),
+    });
+    const parsed = baseSchema.safeParse({ description, lines: lineObjs });
     if (!parsed.success) {
-      parsed.error.issues.forEach((i) => {
-        const key = i.path.join(".") || "form";
-        e[key] = i.message;
-      });
+      parsed.error.issues.forEach((i) => { e[i.path.join(".") || "form"] = i.message; });
     }
+    if (mode === "create" && files.length === 0) e.attachments = "At least one audit attachment is required";
     if (!balanced) e.balance = "Debits and credits must balance and be greater than zero";
     lines.forEach((l, i) => {
       if (!l.account) e[`lines.${i}.account`] = "Account required";
@@ -106,14 +114,20 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
       return;
     }
 
-    onPosted({
-      description: description.trim(),
-      reference: reference.trim() || `MJE-${Date.now()}`,
-      lines,
-    });
-    toast.success("Journal entry posted", {
-      description: `Balanced entry · ${files.length} attachment${files.length !== 1 ? "s" : ""} attached for audit.`,
-    });
+    if (mode === "edit") {
+      onEdited?.({ description: description.trim(), reference: reference.trim(), lines: lineObjs });
+      toast.success("Entry updated", { description: "Audit trail recorded." });
+    } else {
+      onPosted?.({
+        description: description.trim(),
+        reference: reference.trim() || `MJE-${Date.now()}`,
+        lines: lineObjs,
+        files,
+      });
+      toast.success("Journal entry posted", {
+        description: `Balanced entry · ${files.length} attachment${files.length !== 1 ? "s" : ""} attached for audit.`,
+      });
+    }
     reset();
     onOpenChange(false);
   };
@@ -128,9 +142,11 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
     >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Manual Journal Entry</DialogTitle>
+          <DialogTitle>{mode === "edit" ? "Edit Journal Entry" : "New Manual Journal Entry"}</DialogTitle>
           <DialogDescription>
-            Description and at least one audit attachment are required before posting. Entry must balance.
+            {mode === "edit"
+              ? "Edits are permitted only before approval. All changes are logged in the audit trail."
+              : "Description and at least one audit attachment are required before posting. Entry must balance."}
           </DialogDescription>
         </DialogHeader>
 
@@ -256,71 +272,76 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
             )}
           </div>
 
-          <div>
-            <Label>
-              Audit Attachments <span className="text-destructive">*</span>
-            </Label>
-            <label
-              htmlFor="files"
-              className={`mt-1 flex flex-col items-center justify-center px-4 py-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
-                errors.attachments
-                  ? "border-destructive bg-destructive/5"
-                  : "border-border hover:border-primary/50 hover:bg-muted/40"
-              }`}
-            >
-              <Paperclip className="h-5 w-5 text-muted-foreground mb-2" />
-              <span className="text-sm font-medium">Click to attach audit evidence</span>
-              <span className="text-xs text-muted-foreground mt-0.5">PDF, image, or document · max 10MB each</span>
-              <input
-                id="files"
-                type="file"
-                multiple
-                className="hidden"
-                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
-                onChange={(e) => {
-                  handleFiles(e.target.files);
-                  if (errors.attachments) setErrors({ ...errors, attachments: "" });
-                }}
-              />
-            </label>
-            {errors.attachments && (
-              <div className="text-xs text-destructive mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.attachments}
-              </div>
-            )}
-            {files.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border text-sm"
-                  >
-                    <FileCheck2 className="h-4 w-4 text-success shrink-0" />
-                    <span className="truncate flex-1">{f.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {(f.size / 1024).toFixed(1)} KB
-                    </span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+          {mode === "create" && (
+            <div>
+              <Label>
+                Audit Attachments <span className="text-destructive">*</span>
+              </Label>
+              <label
+                htmlFor="files"
+                className={`mt-1 flex flex-col items-center justify-center px-4 py-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+                  errors.attachments
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <Paperclip className="h-5 w-5 text-muted-foreground mb-2" />
+                <span className="text-sm font-medium">Click to attach audit evidence</span>
+                <span className="text-xs text-muted-foreground mt-0.5">PDF, image, or document · max 10MB each</span>
+                <input
+                  id="files"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
+                  onChange={(e) => {
+                    handleFiles(e.target.files);
+                    if (errors.attachments) setErrors({ ...errors, attachments: "" });
+                  }}
+                />
+              </label>
+              {errors.attachments && (
+                <div className="text-xs text-destructive mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.attachments}
+                </div>
+              )}
+              {files.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {files.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border text-sm"
                     >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      <FileCheck2 className="h-4 w-4 text-success shrink-0" />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {(f.size / 1024).toFixed(1)} KB
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handlePost} disabled={!balanced || !description.trim() || files.length === 0}>
-            Post Entry
+          <Button
+            onClick={handlePost}
+            disabled={!balanced || !description.trim() || (mode === "create" && files.length === 0)}
+          >
+            {mode === "edit" ? "Save Changes" : "Post Entry"}
           </Button>
         </DialogFooter>
       </DialogContent>

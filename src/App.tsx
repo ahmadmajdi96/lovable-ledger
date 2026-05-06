@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
+import { JournalProvider } from "@/lib/journalStore";
 import Dashboard from "./pages/Dashboard";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
 import JournalEntries from "./pages/JournalEntries";
@@ -28,22 +29,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<W><Dashboard /></W>} />
-          <Route path="/cfo-markdowns" element={<W><CFOMarkdowns /></W>} />
-          <Route path="/chart-of-accounts" element={<W><ChartOfAccounts /></W>} />
-          <Route path="/journal-entries" element={<W><JournalEntries /></W>} />
-          <Route path="/period-close" element={<W><PeriodClose /></W>} />
-          <Route path="/accounts-payable" element={<W><AccountsPayable /></W>} />
-          <Route path="/three-way-match" element={<W><ThreeWayMatch /></W>} />
-          <Route path="/accounts-receivable" element={<W><AccountsReceivable /></W>} />
-          <Route path="/inventory-accounting" element={<W><InventoryAccounting /></W>} />
-          <Route path="/markdown-lifecycle" element={<W><MarkdownLifecycle /></W>} />
-          <Route path="/fixed-assets" element={<W><FixedAssets /></W>} />
-          <Route path="/tax" element={<W><Tax /></W>} />
-          <Route path="/integrations" element={<W><Integrations /></W>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <JournalProvider>
+          <Routes>
+            <Route path="/" element={<W><Dashboard /></W>} />
+            <Route path="/cfo-markdowns" element={<W><CFOMarkdowns /></W>} />
+            <Route path="/chart-of-accounts" element={<W><ChartOfAccounts /></W>} />
+            <Route path="/journal-entries" element={<W><JournalEntries /></W>} />
+            <Route path="/period-close" element={<W><PeriodClose /></W>} />
+            <Route path="/accounts-payable" element={<W><AccountsPayable /></W>} />
+            <Route path="/three-way-match" element={<W><ThreeWayMatch /></W>} />
+            <Route path="/accounts-receivable" element={<W><AccountsReceivable /></W>} />
+            <Route path="/inventory-accounting" element={<W><InventoryAccounting /></W>} />
+            <Route path="/markdown-lifecycle" element={<W><MarkdownLifecycle /></W>} />
+            <Route path="/fixed-assets" element={<W><FixedAssets /></W>} />
+            <Route path="/tax" element={<W><Tax /></W>} />
+            <Route path="/integrations" element={<W><Integrations /></W>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </JournalProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
