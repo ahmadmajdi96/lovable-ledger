@@ -272,71 +272,76 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted, mode = "create", in
             )}
           </div>
 
-          <div>
-            <Label>
-              Audit Attachments <span className="text-destructive">*</span>
-            </Label>
-            <label
-              htmlFor="files"
-              className={`mt-1 flex flex-col items-center justify-center px-4 py-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
-                errors.attachments
-                  ? "border-destructive bg-destructive/5"
-                  : "border-border hover:border-primary/50 hover:bg-muted/40"
-              }`}
-            >
-              <Paperclip className="h-5 w-5 text-muted-foreground mb-2" />
-              <span className="text-sm font-medium">Click to attach audit evidence</span>
-              <span className="text-xs text-muted-foreground mt-0.5">PDF, image, or document · max 10MB each</span>
-              <input
-                id="files"
-                type="file"
-                multiple
-                className="hidden"
-                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
-                onChange={(e) => {
-                  handleFiles(e.target.files);
-                  if (errors.attachments) setErrors({ ...errors, attachments: "" });
-                }}
-              />
-            </label>
-            {errors.attachments && (
-              <div className="text-xs text-destructive mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.attachments}
-              </div>
-            )}
-            {files.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border text-sm"
-                  >
-                    <FileCheck2 className="h-4 w-4 text-success shrink-0" />
-                    <span className="truncate flex-1">{f.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {(f.size / 1024).toFixed(1)} KB
-                    </span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6"
-                      onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+          {mode === "create" && (
+            <div>
+              <Label>
+                Audit Attachments <span className="text-destructive">*</span>
+              </Label>
+              <label
+                htmlFor="files"
+                className={`mt-1 flex flex-col items-center justify-center px-4 py-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+                  errors.attachments
+                    ? "border-destructive bg-destructive/5"
+                    : "border-border hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <Paperclip className="h-5 w-5 text-muted-foreground mb-2" />
+                <span className="text-sm font-medium">Click to attach audit evidence</span>
+                <span className="text-xs text-muted-foreground mt-0.5">PDF, image, or document · max 10MB each</span>
+                <input
+                  id="files"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
+                  onChange={(e) => {
+                    handleFiles(e.target.files);
+                    if (errors.attachments) setErrors({ ...errors, attachments: "" });
+                  }}
+                />
+              </label>
+              {errors.attachments && (
+                <div className="text-xs text-destructive mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.attachments}
+                </div>
+              )}
+              {files.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {files.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border text-sm"
                     >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      <FileCheck2 className="h-4 w-4 text-success shrink-0" />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {(f.size / 1024).toFixed(1)} KB
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handlePost} disabled={!balanced || !description.trim() || files.length === 0}>
-            Post Entry
+          <Button
+            onClick={handlePost}
+            disabled={!balanced || !description.trim() || (mode === "create" && files.length === 0)}
+          >
+            {mode === "edit" ? "Save Changes" : "Post Entry"}
           </Button>
         </DialogFooter>
       </DialogContent>
