@@ -2,12 +2,19 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { journalEntries as seed, fmtCurrency, JournalEntry } from "@/lib/mockData";
-import { ChevronRight, Plus, FileText } from "lucide-react";
+import { fmtCurrency } from "@/lib/mockData";
+import { useJournals, ExtJournalEntry, Attachment } from "@/lib/journalStore";
+import {
+  ChevronRight, Plus, FileText, Paperclip, Download, Eye, Pencil, RotateCcw,
+  CheckCircle2, History, Image as ImageIcon, FileSpreadsheet, FileType,
+} from "lucide-react";
 import { format } from "date-fns";
 import ManualJournalDialog from "@/components/ManualJournalDialog";
-import { chartOfAccounts } from "@/lib/mockData";
+import { toast } from "sonner";
 
 const sourceTone: Record<string, string> = {
   CoreERP: "bg-primary/10 text-primary border-primary/20",
@@ -17,31 +24,114 @@ const sourceTone: Record<string, string> = {
   Manual: "bg-muted text-muted-foreground border-border",
 };
 
-const JournalEntries = () => {
-  const [entries, setEntries] = useState<JournalEntry[]>(seed);
-  const [open, setOpen] = useState<string | null>(seed[0].id);
-  const [dialogOpen, setDialogOpen] = useState(false);
+const fileIcon = (type: string) => {
+  if (type.startsWith("image/")) return ImageIcon;
+  if (type.includes("sheet") || type.includes("excel")) return FileSpreadsheet;
+  return FileType;
+};
 
-  const handlePosted = (e: { description: string; reference: string; lines: { account: string; debit: string; credit: string }[] }) => {
-    const id = `JE-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(entries.length + 1).padStart(5, "0")}`;
-    const newEntry: JournalEntry = {
-      id,
-      date: new Date().toISOString(),
-      source: "Manual",
-      reference: e.reference,
-      description: e.description,
-      status: "POSTED",
-      postedBy: "cfo@retailco.com",
-      lines: e.lines.map((l) => ({
-        account: l.account,
-        accountName: chartOfAccounts.find((a) => a.code === l.account)?.name ?? l.account,
-        debit: Number(l.debit) || 0,
-        credit: Number(l.credit) || 0,
-      })),
-    };
-    setEntries([newEntry, ...entries]);
-    setOpen(id);
-  };
+const AttachmentItem = ({ a }: { a: Attachment }) => {
+  const Icon = fileIcon(a.type);
+  const isImage = a.type.startsWith("image/");
+  const isPdf = a.type === "application/pdf";
+  const [preview, setPreview] = useState(false);
+
+  return (
+    <>
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-card border border-border hover:border-primary/30 transition-colors">
+        <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium truncate">{a.name}</div>
+          <div className="text-[11px] text-muted-foreground">
+            {(a.size / 1024).toFixed(1)} KB · {a.uploadedBy} · {format(new Date(a.uploadedAt), "PPp")}
+          </div>
+        </div>
+        {(isImage || isPdf) && a.url !== "#" && (
+          <Button size="sm" variant="ghost" onClick={() => setPreview(true)}>
+            <Eye className="h-3.5 w-3.5 mr-1" /> Preview
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            if (a.url === "#") { toast.info("Demo attachment — no file body to download"); return; }
+            const link = document.createElement("a");
+            link.href = a.url; link.download = a.name; link.click();
+          }}
+        >
+          <Download className="h-3.5 w-3.5 mr-1" /> Download
+        </Button>
+      </div>
+
+      <Dialog open={preview} onOpenChange={setPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <DialogTitle className="text-base">{a.name}</DialogTitle>
+            <DialogDescription className="text-xs">
+              Uploaded by {a.uploadedBy} · {format(new Date(a.uploadedAt), "PPp")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted/30 max-h-[70vh] overflow-auto p-4 flex items-center justify-center">
+            {isImage && <img src={a.url} alt={a.name} className="max-w-full max-h-[65vh] rounded-lg shadow-soft" />}
+            {isPdf && <iframe src={a.url} title={a.name} className="w-full h-[65vh] rounded-lg bg-white" />}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; open: boolean; onOpenChange: (v: boolean) => void }) => {
+  const { reverseEntry } = useJournals();
+  const [reason, setReason] = useState("");
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reverse Journal Entry</DialogTitle>
+          <DialogDescription>
+            Posts an offsetting entry. Original entry will be marked REVERSED. This action is logged.
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          <Label>Reason <span className="text-destructive">*</span></Label>
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why this entry is being reversed (min 10 chars)"
+            maxLength={300}
+          />
+          <div className="text-[11px] text-muted-foreground mt-1">{reason.trim().length}/300</div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            variant="destructive"
+            disabled={reason.trim().length < 10}
+            onClick={() => {
+              reverseEntry(entry.id, reason.trim());
+              toast.success("Entry reversed", { description: "Offsetting entry posted." });
+              onOpenChange(false);
+              setReason("");
+            }}
+          >
+            Reverse Entry
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const JournalEntries = () => {
+  const { entries, audit, postManual, editEntry, approveEntry, addAttachments } = useJournals();
+  const [open, setOpen] = useState<string | null>(entries[0]?.id ?? null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<ExtJournalEntry | null>(null);
+  const [reversing, setReversing] = useState<ExtJournalEntry | null>(null);
 
   return (
     <>
@@ -49,13 +139,45 @@ const JournalEntries = () => {
         title="Journal Entries"
         description="Auto-created from CoreERP, ExpirySmart, PriceAI & SmartPOS events. Manual entries require description and audit attachment."
         actions={
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> New Manual Entry
           </Button>
         }
       />
 
-      <ManualJournalDialog open={dialogOpen} onOpenChange={setDialogOpen} onPosted={handlePosted} />
+      <ManualJournalDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onPosted={(e) => {
+          const id = postManual(e);
+          setOpen(id);
+        }}
+      />
+
+      {editing && (
+        <ManualJournalDialog
+          open
+          mode="edit"
+          onOpenChange={(v) => !v && setEditing(null)}
+          initial={{
+            description: editing.description,
+            reference: editing.reference,
+            lines: editing.lines.map((l) => ({ account: l.account, debit: l.debit, credit: l.credit })),
+          }}
+          onEdited={(e) => {
+            editEntry(editing.id, e);
+            setEditing(null);
+          }}
+        />
+      )}
+
+      {reversing && (
+        <ReverseDialog
+          entry={reversing}
+          open
+          onOpenChange={(v) => !v && setReversing(null)}
+        />
+      )}
 
       <Card className="p-0 overflow-hidden">
         <div className="divide-y divide-border">
@@ -63,6 +185,9 @@ const JournalEntries = () => {
             const totalDr = j.lines.reduce((s, l) => s + l.debit, 0);
             const totalCr = j.lines.reduce((s, l) => s + l.credit, 0);
             const isOpen = open === j.id;
+            const entryAudit = audit.filter((a) => a.entryId === j.id);
+            const editable = j.source === "Manual" && j.status === "POSTED" && !j.approved;
+
             return (
               <div key={j.id}>
                 <button
@@ -79,19 +204,76 @@ const JournalEntries = () => {
                       {j.id} · {j.reference}
                     </div>
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {j.attachments.length > 0 && (
+                      <span className="pill bg-muted text-muted-foreground border-border">
+                        <Paperclip className="h-3 w-3" /> {j.attachments.length}
+                      </span>
+                    )}
+                    {j.approved && (
+                      <span className="pill bg-success/10 text-success border-success/20">
+                        <CheckCircle2 className="h-3 w-3" /> Approved
+                      </span>
+                    )}
+                  </div>
                   <div className="text-right shrink-0">
                     <div className="font-mono tabular-nums text-sm">{fmtCurrency(totalDr)}</div>
                     <div className="text-[10px] text-muted-foreground">{format(new Date(j.date), "MMM d, HH:mm")}</div>
                   </div>
                   <Badge
-                    variant={j.status === "POSTED" ? "default" : j.status === "DRAFT" ? "secondary" : "outline"}
+                    variant={
+                      j.status === "POSTED" ? "default" : j.status === "DRAFT" ? "secondary" :
+                      j.status === "REVERSED" ? "outline" : "outline"
+                    }
                     className="text-[10px]"
                   >
                     {j.status}
                   </Badge>
                 </button>
+
                 {isOpen && (
-                  <div className="bg-muted/30 px-5 py-4 border-t border-border">
+                  <div className="bg-muted/30 px-5 py-4 border-t border-border space-y-5">
+                    {/* Action bar */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {editable && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => setEditing(j)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => { approveEntry(j.id); toast.success("Entry approved"); }}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
+                          </Button>
+                        </>
+                      )}
+                      {j.status === "POSTED" && (
+                        <Button size="sm" variant="outline" onClick={() => setReversing(j)}>
+                          <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reverse
+                        </Button>
+                      )}
+                      <label className="ml-auto cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              addAttachments(j.id, Array.from(e.target.files));
+                              toast.success("Attachment added");
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                        <span className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline cursor-pointer">
+                          <Paperclip className="h-3.5 w-3.5" /> Add attachment
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Lines */}
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
@@ -123,8 +305,49 @@ const JournalEntries = () => {
                         </tr>
                       </tbody>
                     </table>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <FileText className="h-3 w-3" /> Posted by {j.postedBy}
+                      {j.reverses && <span>· Reverses <span className="font-mono">{j.reverses}</span></span>}
+                      {j.reversedBy && <span>· Reversed by <span className="font-mono">{j.reversedBy}</span></span>}
+                    </div>
+
+                    {/* Attachments */}
+                    <div>
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Paperclip className="h-3 w-3" /> Audit Attachments ({j.attachments.length})
+                      </div>
+                      {j.attachments.length === 0 ? (
+                        <div className="text-xs text-muted-foreground italic">No attachments</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {j.attachments.map((a) => (
+                            <AttachmentItem key={a.id} a={a} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Audit trail */}
+                    <div>
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <History className="h-3 w-3" /> Audit Trail
+                      </div>
+                      <div className="space-y-1.5">
+                        {entryAudit.map((a) => (
+                          <div key={a.id} className="flex items-center gap-3 text-xs">
+                            <Badge variant="outline" className="text-[10px] font-mono shrink-0">
+                              {a.action}
+                            </Badge>
+                            <span className="text-muted-foreground">{a.user}</span>
+                            <span className="text-muted-foreground/70">·</span>
+                            <span className="text-muted-foreground">{format(new Date(a.timestamp), "PPp")}</span>
+                            {a.details && (
+                              <span className="text-muted-foreground truncate flex-1">— {a.details}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
