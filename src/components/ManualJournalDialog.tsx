@@ -35,16 +35,25 @@ const entrySchema = z.object({
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onPosted: (entry: { description: string; reference: string; lines: DraftLine[] }) => void;
+  // create mode
+  onPosted?: (entry: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }) => void;
+  // edit mode
+  mode?: "create" | "edit";
+  initial?: {
+    description: string;
+    reference: string;
+    lines: { account: string; debit: number; credit: number }[];
+  };
+  onEdited?: (entry: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }) => void;
 }
 
-const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
-  const [description, setDescription] = useState("");
-  const [reference, setReference] = useState("");
-  const [lines, setLines] = useState<DraftLine[]>([
-    { account: "", debit: "", credit: "" },
-    { account: "", debit: "", credit: "" },
-  ]);
+const ManualJournalDialog = ({ open, onOpenChange, onPosted, mode = "create", initial, onEdited }: Props) => {
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [reference, setReference] = useState(initial?.reference ?? "");
+  const [lines, setLines] = useState<DraftLine[]>(
+    initial?.lines.map((l) => ({ account: l.account, debit: l.debit ? String(l.debit) : "", credit: l.credit ? String(l.credit) : "" }))
+      ?? [{ account: "", debit: "", credit: "" }, { account: "", debit: "", credit: "" }]
+  );
   const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -53,6 +62,7 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
   const balanced = totalDr === totalCr && totalDr > 0;
 
   const reset = () => {
+    if (mode === "edit") return;
     setDescription(""); setReference("");
     setLines([{ account: "", debit: "", credit: "" }, { account: "", debit: "", credit: "" }]);
     setFiles([]); setErrors({});
@@ -78,20 +88,18 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
   };
 
   const handlePost = () => {
-    const parsed = entrySchema.safeParse({
-      description,
-      reference,
-      lines: lines.map((l) => ({ account: l.account, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0 })),
-      attachments: files,
-    });
-
+    const lineObjs = lines.map((l) => ({ account: l.account, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0 }));
     const e: Record<string, string> = {};
+
+    const baseSchema = z.object({
+      description: z.string().trim().min(10, "Description must be at least 10 characters").max(500),
+      lines: z.array(lineSchema).min(2, "At least two lines required"),
+    });
+    const parsed = baseSchema.safeParse({ description, lines: lineObjs });
     if (!parsed.success) {
-      parsed.error.issues.forEach((i) => {
-        const key = i.path.join(".") || "form";
-        e[key] = i.message;
-      });
+      parsed.error.issues.forEach((i) => { e[i.path.join(".") || "form"] = i.message; });
     }
+    if (mode === "create" && files.length === 0) e.attachments = "At least one audit attachment is required";
     if (!balanced) e.balance = "Debits and credits must balance and be greater than zero";
     lines.forEach((l, i) => {
       if (!l.account) e[`lines.${i}.account`] = "Account required";
@@ -106,14 +114,20 @@ const ManualJournalDialog = ({ open, onOpenChange, onPosted }: Props) => {
       return;
     }
 
-    onPosted({
-      description: description.trim(),
-      reference: reference.trim() || `MJE-${Date.now()}`,
-      lines,
-    });
-    toast.success("Journal entry posted", {
-      description: `Balanced entry · ${files.length} attachment${files.length !== 1 ? "s" : ""} attached for audit.`,
-    });
+    if (mode === "edit") {
+      onEdited?.({ description: description.trim(), reference: reference.trim(), lines: lineObjs });
+      toast.success("Entry updated", { description: "Audit trail recorded." });
+    } else {
+      onPosted?.({
+        description: description.trim(),
+        reference: reference.trim() || `MJE-${Date.now()}`,
+        lines: lineObjs,
+        files,
+      });
+      toast.success("Journal entry posted", {
+        description: `Balanced entry · ${files.length} attachment${files.length !== 1 ? "s" : ""} attached for audit.`,
+      });
+    }
     reset();
     onOpenChange(false);
   };
