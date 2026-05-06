@@ -3,9 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { journalEntries, fmtCurrency, JournalEntry } from "@/lib/mockData";
+import { journalEntries as seed, fmtCurrency, JournalEntry } from "@/lib/mockData";
 import { ChevronRight, Plus, FileText } from "lucide-react";
 import { format } from "date-fns";
+import ManualJournalDialog from "@/components/ManualJournalDialog";
+import { chartOfAccounts } from "@/lib/mockData";
 
 const sourceTone: Record<string, string> = {
   CoreERP: "bg-primary/10 text-primary border-primary/20",
@@ -16,7 +18,30 @@ const sourceTone: Record<string, string> = {
 };
 
 const JournalEntries = () => {
-  const [open, setOpen] = useState<string | null>(journalEntries[0].id);
+  const [entries, setEntries] = useState<JournalEntry[]>(seed);
+  const [open, setOpen] = useState<string | null>(seed[0].id);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handlePosted = (e: { description: string; reference: string; lines: { account: string; debit: string; credit: string }[] }) => {
+    const id = `JE-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(entries.length + 1).padStart(5, "0")}`;
+    const newEntry: JournalEntry = {
+      id,
+      date: new Date().toISOString(),
+      source: "Manual",
+      reference: e.reference,
+      description: e.description,
+      status: "POSTED",
+      postedBy: "cfo@retailco.com",
+      lines: e.lines.map((l) => ({
+        account: l.account,
+        accountName: chartOfAccounts.find((a) => a.code === l.account)?.name ?? l.account,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+      })),
+    };
+    setEntries([newEntry, ...entries]);
+    setOpen(id);
+  };
 
   return (
     <>
@@ -24,15 +49,17 @@ const JournalEntries = () => {
         title="Journal Entries"
         description="Auto-created from CoreERP, ExpirySmart, PriceAI & SmartPOS events. Manual entries require description and audit attachment."
         actions={
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> New Manual Entry
           </Button>
         }
       />
 
+      <ManualJournalDialog open={dialogOpen} onOpenChange={setDialogOpen} onPosted={handlePosted} />
+
       <Card className="p-0 overflow-hidden">
         <div className="divide-y divide-border">
-          {journalEntries.map((j) => {
+          {entries.map((j) => {
             const totalDr = j.lines.reduce((s, l) => s + l.debit, 0);
             const totalCr = j.lines.reduce((s, l) => s + l.credit, 0);
             const isOpen = open === j.id;
