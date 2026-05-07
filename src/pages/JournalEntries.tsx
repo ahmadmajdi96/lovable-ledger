@@ -89,6 +89,7 @@ const AttachmentItem = ({ a }: { a: Attachment }) => {
 
 const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { reverseEntry } = useJournals();
+  const { user } = useRole();
   const [reason, setReason] = useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,7 +116,7 @@ const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; 
             variant="destructive"
             disabled={reason.trim().length < 10}
             onClick={() => {
-              reverseEntry(entry.id, reason.trim());
+              reverseEntry(entry.id, reason.trim(), user.email);
               toast.success("Entry reversed", { description: "Offsetting entry posted." });
               onOpenChange(false);
               setReason("");
@@ -131,6 +132,7 @@ const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; 
 
 const JournalEntries = () => {
   const { entries, audit, postManual, editEntry, approveEntry, addAttachments } = useJournals();
+  const { user, can } = useRole();
   const [open, setOpen] = useState<string | null>(entries[0]?.id ?? null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ExtJournalEntry | null>(null);
