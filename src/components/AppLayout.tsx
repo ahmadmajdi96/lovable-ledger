@@ -50,8 +50,8 @@ const sections: NavSection[] = [
 const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, users, setUser } = useRole();
   return (
-    <div className="min-h-screen flex bg-background">
-      <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="min-h-screen bg-background">
+      <aside className="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
         <div className="px-5 py-5 flex items-center gap-3 border-b border-sidebar-border">
           <div
             className="h-10 w-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md"
@@ -116,7 +116,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 overflow-auto" style={{ background: "var(--gradient-hero)" }}>
+      <main className="ml-64 min-h-screen overflow-y-auto" style={{ background: "var(--gradient-hero)" }}>
         <div className="px-8 py-6 max-w-[1600px] mx-auto animate-fade-in">{children}</div>
       </main>
     </div>
