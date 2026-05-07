@@ -9,6 +9,8 @@ import { useMemo, useState } from "react";
 import { apInvoices as seedInvoices, fmtCurrency, APInvoice } from "@/lib/mockData";
 import { CheckCircle2, XCircle, AlertTriangle, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { useRole } from "@/lib/roleStore";
+import { ShieldAlert } from "lucide-react";
 
 type MismatchReason = "PRICE_VARIANCE" | "QTY_VARIANCE" | "TOLERANCE_EXCEEDED" | "MISSING_RECEIPT" | "TAX_MISMATCH";
 type Resolution = "ppv" | "reject" | "hold";
@@ -38,11 +40,14 @@ const reasonTone: Record<MismatchReason, string> = {
 };
 
 const ThreeWayMatch = () => {
+  const { can, user } = useRole();
   const [invoices, setInvoices] = useState<APInvoice[]>(seedInvoices);
   const [filter, setFilter] = useState<"all" | "EXCEPTION" | "MATCHED">("EXCEPTION");
   const [active, setActive] = useState<string | null>(invoices.find((i) => i.status === "EXCEPTION")?.id ?? null);
   const [resolution, setResolution] = useState<Resolution>("ppv");
   const [notes, setNotes] = useState("");
+  const canResolve = can("resolve_ap_exception");
+  const canApprovePay = can("approve_ap_payment");
 
   const visible = useMemo(() => {
     if (filter === "all") return invoices;
@@ -64,12 +69,20 @@ const ThreeWayMatch = () => {
   const inv = invoices.find((i) => i.id === active);
 
   const approveMatched = (id: string) => {
+    if (!canApprovePay) {
+      toast.error("Permission denied", { description: `${user.role} cannot approve invoices for payment.` });
+      return;
+    }
     setInvoices((p) => p.map((i) => (i.id === id ? { ...i, status: "PAID" } : i)));
     toast.success("Invoice approved for payment", { description: `${id} sent to payment proposal queue.` });
   };
 
   const submitResolution = () => {
     if (!inv) return;
+    if (!canResolve) {
+      toast.error("Permission denied", { description: `${user.role} cannot resolve AP exceptions.` });
+      return;
+    }
     if (resolution === "ppv") {
       setInvoices((p) => p.map((i) => (i.id === inv.id ? { ...i, status: "MATCHED" } : i)));
       toast.success("Variance booked to PPV", {
@@ -165,6 +178,7 @@ const ThreeWayMatch = () => {
                     <Button
                       size="sm"
                       className="w-full mt-2 h-7 text-xs"
+                      disabled={!canApprovePay}
                       onClick={(ev) => { ev.stopPropagation(); approveMatched(e.id); }}
                     >
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Approve for payment
@@ -245,6 +259,12 @@ const ThreeWayMatch = () => {
               {inv.status === "EXCEPTION" ? (
                 <div className="border-t border-border pt-5">
                   <h3 className="font-semibold text-sm mb-3">Resolution</h3>
+                  {!canResolve && (
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-muted border border-border text-xs flex items-center gap-2 text-muted-foreground">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>Read-only — only AP roles (AP Manager / AP Clerk) can resolve exceptions. Current role: <strong>{user.role}</strong>.</span>
+                    </div>
+                  )}
                   <RadioGroup value={resolution} onValueChange={(v) => setResolution(v as Resolution)} className="space-y-2 mb-4">
                     <ResOption value="ppv" id="ppv" title="Accept Variance — Book to PPV" sub="Posts: DR 5300 Purchase Price Variance / CR 2310 AP Accrued" />
                     <ResOption value="reject" id="reject" title="Reject Invoice" sub="Send back to supplier for correction" />
@@ -256,15 +276,21 @@ const ThreeWayMatch = () => {
                     className="mb-3"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    disabled={!canResolve}
                   />
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => { setNotes(""); }}>Cancel</Button>
-                    <Button onClick={submitResolution}>Submit Resolution</Button>
+                    <Button onClick={submitResolution} disabled={!canResolve}>Submit Resolution</Button>
                   </div>
                 </div>
               ) : inv.status === "MATCHED" ? (
-                <div className="border-t border-border pt-5 flex justify-end">
-                  <Button onClick={() => approveMatched(inv.id)}>
+                <div className="border-t border-border pt-5 flex justify-end items-center gap-3">
+                  {!canApprovePay && (
+                    <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" /> Requires AP Manager or Controller/CFO
+                    </span>
+                  )}
+                  <Button onClick={() => approveMatched(inv.id)} disabled={!canApprovePay}>
                     <CheckCircle2 className="h-4 w-4 mr-2" /> Approve for Payment
                   </Button>
                 </div>

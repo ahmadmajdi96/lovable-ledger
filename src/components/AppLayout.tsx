@@ -5,6 +5,8 @@ import {
   Boxes, Tag, Building2, Percent, BarChart3, Plug, ShieldCheck, FileBarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRole, roleLabel } from "@/lib/roleStore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type NavItem = { to: string; label: string; icon: any };
 type NavSection = { label: string; items: NavItem[] };
@@ -46,6 +48,7 @@ const sections: NavSection[] = [
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
+  const { user, users, setUser } = useRole();
   return (
     <div className="min-h-screen flex bg-background">
       <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -85,17 +88,29 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-2">
+          <Select value={user.email} onValueChange={setUser}>
+            <SelectTrigger className="h-9 text-xs bg-sidebar-accent/40 border-sidebar-border/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map((u) => (
+                <SelectItem key={u.email} value={u.email} className="text-xs">
+                  {u.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-sidebar-accent/60 border border-sidebar-border/50">
             <div
               className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0 shadow-sm"
               style={{ background: "var(--gradient-primary)" }}
             >
-              C
+              {user.name[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold truncate text-sidebar-foreground">cfo@retailco.com</div>
-              <div className="text-[10px] text-sidebar-muted truncate">Chief Financial Officer</div>
+              <div className="text-xs font-semibold truncate text-sidebar-foreground">{user.email}</div>
+              <div className="text-[10px] text-sidebar-muted truncate">{roleLabel[user.role]}</div>
             </div>
           </div>
         </div>

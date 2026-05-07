@@ -23,6 +23,8 @@ export interface AuditEvent {
 export interface ExtJournalEntry extends JournalEntry {
   attachments: Attachment[];
   approved: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
   reversedBy?: string; // id of reversal entry
   reverses?: string;
 }
@@ -30,20 +32,19 @@ export interface ExtJournalEntry extends JournalEntry {
 interface Ctx {
   entries: ExtJournalEntry[];
   audit: AuditEvent[];
-  postManual: (e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }) => string;
-  editEntry: (id: string, e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }) => void;
-  reverseEntry: (id: string, reason: string) => void;
-  approveEntry: (id: string) => void;
-  addAttachments: (id: string, files: File[]) => void;
+  postManual: (e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }, user: string) => string;
+  editEntry: (id: string, e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }, user: string) => void;
+  reverseEntry: (id: string, reason: string, user: string) => void;
+  approveEntry: (id: string, user: string) => void;
+  addAttachments: (id: string, files: File[], user: string) => void;
 }
 
 const JournalCtx = createContext<Ctx | null>(null);
 
-const USER = "cfo@retailco.com";
 const now = () => new Date().toISOString();
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-const filesToAttachments = (files: File[]): Attachment[] =>
+const filesToAttachments = (files: File[], user: string): Attachment[] =>
   files.map((f) => ({
     id: uid("AT"),
     name: f.name,
@@ -51,7 +52,7 @@ const filesToAttachments = (files: File[]): Attachment[] =>
     type: f.type || "application/octet-stream",
     url: URL.createObjectURL(f),
     uploadedAt: now(),
-    uploadedBy: USER,
+    uploadedBy: user,
   }));
 
 const initial: ExtJournalEntry[] = seed.map((e) => ({
@@ -63,6 +64,8 @@ const initial: ExtJournalEntry[] = seed.map((e) => ({
       }]
     : [],
   approved: e.source !== "Manual" || e.status !== "DRAFT",
+  approvedBy: e.source !== "Manual" ? "system" : undefined,
+  approvedAt: e.source !== "Manual" ? e.date : undefined,
 }));
 
 const initialAudit: AuditEvent[] = seed.map((e) => ({
@@ -74,10 +77,10 @@ export const JournalProvider = ({ children }: { children: ReactNode }) => {
   const [entries, setEntries] = useState<ExtJournalEntry[]>(initial);
   const [audit, setAudit] = useState<AuditEvent[]>(initialAudit);
 
-  const log = (entryId: string, action: AuditEvent["action"], details?: string) =>
-    setAudit((a) => [{ id: uid("AE"), entryId, action, user: USER, timestamp: now(), details }, ...a]);
+  const log = (entryId: string, action: AuditEvent["action"], user: string, details?: string) =>
+    setAudit((a) => [{ id: uid("AE"), entryId, action, user, timestamp: now(), details }, ...a]);
 
-  const postManual: Ctx["postManual"] = useCallback((e) => {
+  const postManual: Ctx["postManual"] = useCallback((e, user) => {
     const id = `JE-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-M${Math.floor(Math.random() * 9000 + 1000)}`;
     const newEntry: ExtJournalEntry = {
       id,
@@ -86,8 +89,8 @@ export const JournalProvider = ({ children }: { children: ReactNode }) => {
       reference: e.reference,
       description: e.description,
       status: "POSTED",
-      postedBy: USER,
-      attachments: filesToAttachments(e.files),
+      postedBy: user,
+      attachments: filesToAttachments(e.files, user),
       approved: false,
       lines: e.lines.map((l) => ({
         account: l.account,
@@ -96,11 +99,11 @@ export const JournalProvider = ({ children }: { children: ReactNode }) => {
       })),
     };
     setEntries((p) => [newEntry, ...p]);
-    log(id, "POSTED", `Manual entry posted with ${e.files.length} attachment(s)`);
+    log(id, "POSTED", user, `Manual entry posted with ${e.files.length} attachment(s)`);
     return id;
   }, []);
 
-  const editEntry: Ctx["editEntry"] = useCallback((id, e) => {
+  const editEntry: Ctx["editEntry"] = useCallback((id, e, user) => {
     setEntries((p) =>
       p.map((x) =>
         x.id === id
@@ -117,10 +120,10 @@ export const JournalProvider = ({ children }: { children: ReactNode }) => {
           : x
       )
     );
-    log(id, "EDITED", "Entry edited prior to approval");
+    log(id, "EDITED", user, "Entry edited prior to approval");
   }, []);
 
-  const reverseEntry: Ctx["reverseEntry"] = useCallback((id, reason) => {
+  const reverseEntry: Ctx["reverseEntry"] = useCallback((id, reason, user) => {
     setEntries((p) => {
       const orig = p.find((x) => x.id === id);
       if (!orig) return p;
@@ -133,25 +136,30 @@ export const JournalProvider = ({ children }: { children: ReactNode }) => {
         description: `[REVERSAL] ${orig.description} — ${reason}`,
         status: "POSTED",
         approved: false,
+        approvedBy: undefined,
+        approvedAt: undefined,
         reverses: orig.id,
         attachments: [],
+        postedBy: user,
         lines: orig.lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit })),
       };
       return [reversal, ...p.map((x) => (x.id === id ? { ...x, status: "REVERSED" as const, reversedBy: revId } : x))];
     });
-    log(id, "REVERSED", reason);
+    log(id, "REVERSED", user, reason);
   }, []);
 
-  const approveEntry: Ctx["approveEntry"] = useCallback((id) => {
-    setEntries((p) => p.map((x) => (x.id === id ? { ...x, approved: true } : x)));
-    log(id, "APPROVED", "Approved by controller");
+  const approveEntry: Ctx["approveEntry"] = useCallback((id, user) => {
+    const at = now();
+    setEntries((p) => p.map((x) => (x.id === id ? { ...x, approved: true, approvedBy: user, approvedAt: at } : x)));
+    log(id, "APPROVED", user, `Approved by ${user}`);
   }, []);
 
-  const addAttachments: Ctx["addAttachments"] = useCallback((id, files) => {
-    const atts = filesToAttachments(files);
+  const addAttachments: Ctx["addAttachments"] = useCallback((id, files, user) => {
+    const atts = filesToAttachments(files, user);
     setEntries((p) => p.map((x) => (x.id === id ? { ...x, attachments: [...x.attachments, ...atts] } : x)));
-    log(id, "ATTACHMENT_ADDED", `${atts.length} file(s) added`);
+    log(id, "ATTACHMENT_ADDED", user, `${atts.length} file(s) added`);
   }, []);
+
 
   const value = useMemo(
     () => ({ entries, audit, postManual, editEntry, reverseEntry, approveEntry, addAttachments }),

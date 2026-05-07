@@ -15,6 +15,9 @@ import {
 import { format } from "date-fns";
 import ManualJournalDialog from "@/components/ManualJournalDialog";
 import { toast } from "sonner";
+import { useRole } from "@/lib/roleStore";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShieldAlert } from "lucide-react";
 
 const sourceTone: Record<string, string> = {
   CoreERP: "bg-primary/10 text-primary border-primary/20",
@@ -86,6 +89,7 @@ const AttachmentItem = ({ a }: { a: Attachment }) => {
 
 const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { reverseEntry } = useJournals();
+  const { user } = useRole();
   const [reason, setReason] = useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,7 +116,7 @@ const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; 
             variant="destructive"
             disabled={reason.trim().length < 10}
             onClick={() => {
-              reverseEntry(entry.id, reason.trim());
+              reverseEntry(entry.id, reason.trim(), user.email);
               toast.success("Entry reversed", { description: "Offsetting entry posted." });
               onOpenChange(false);
               setReason("");
@@ -128,6 +132,7 @@ const ReverseDialog = ({ entry, open, onOpenChange }: { entry: ExtJournalEntry; 
 
 const JournalEntries = () => {
   const { entries, audit, postManual, editEntry, approveEntry, addAttachments } = useJournals();
+  const { user, can } = useRole();
   const [open, setOpen] = useState<string | null>(entries[0]?.id ?? null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ExtJournalEntry | null>(null);
@@ -149,7 +154,7 @@ const JournalEntries = () => {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onPosted={(e) => {
-          const id = postManual(e);
+          const id = postManual(e, user.email);
           setOpen(id);
         }}
       />
@@ -165,7 +170,7 @@ const JournalEntries = () => {
             lines: editing.lines.map((l) => ({ account: l.account, debit: l.debit, credit: l.credit })),
           }}
           onEdited={(e) => {
-            editEntry(editing.id, e);
+            editEntry(editing.id, e, user.email);
             setEditing(null);
           }}
         />
@@ -235,23 +240,33 @@ const JournalEntries = () => {
                   <div className="bg-muted/30 px-5 py-4 border-t border-border space-y-5">
                     {/* Action bar */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {editable && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => setEditing(j)}>
-                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => { approveEntry(j.id); toast.success("Entry approved"); }}
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
-                          </Button>
-                        </>
+                      {editable && can("edit_journal") && (
+                        <Button size="sm" variant="outline" onClick={() => setEditing(j)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                        </Button>
                       )}
-                      {j.status === "POSTED" && (
+                      {editable && can("approve_journal") && (
+                        <Button
+                          size="sm"
+                          onClick={() => { approveEntry(j.id, user.email); toast.success("Entry approved", { description: `Approved by ${user.email}` }); }}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
+                        </Button>
+                      )}
+                      {editable && !can("approve_journal") && (
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <ShieldAlert className="h-3 w-3" /> Approval requires CFO/Controller role
+                        </span>
+                      )}
+                      {j.status === "POSTED" && !j.approved && can("reverse_journal") && (
                         <Button size="sm" variant="outline" onClick={() => setReversing(j)}>
                           <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Reverse
                         </Button>
+                      )}
+                      {j.status === "POSTED" && j.approved && j.source === "Manual" && (
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <ShieldAlert className="h-3 w-3" /> Locked — already approved (reversal disabled)
+                        </span>
                       )}
                       <label className="ml-auto cursor-pointer">
                         <input
@@ -261,7 +276,7 @@ const JournalEntries = () => {
                           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt"
                           onChange={(e) => {
                             if (e.target.files && e.target.files.length > 0) {
-                              addAttachments(j.id, Array.from(e.target.files));
+                              addAttachments(j.id, Array.from(e.target.files), user.email);
                               toast.success("Attachment added");
                               e.target.value = "";
                             }
@@ -272,6 +287,15 @@ const JournalEntries = () => {
                         </span>
                       </label>
                     </div>
+
+                    {j.approved && j.approvedBy && (
+                      <Alert className="border-success/30 bg-success/5">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <AlertDescription className="text-xs">
+                          Approved by <strong>{j.approvedBy}</strong> on {j.approvedAt ? format(new Date(j.approvedAt), "PPp") : "—"}. Reversal is disabled after approval.
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
                     {/* Lines */}
                     <table className="w-full text-sm">
