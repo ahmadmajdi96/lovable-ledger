@@ -178,6 +178,7 @@ const ThreeWayMatch = () => {
                     <Button
                       size="sm"
                       className="w-full mt-2 h-7 text-xs"
+                      disabled={!canApprovePay}
                       onClick={(ev) => { ev.stopPropagation(); approveMatched(e.id); }}
                     >
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Approve for payment
