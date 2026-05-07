@@ -258,6 +258,12 @@ const ThreeWayMatch = () => {
               {inv.status === "EXCEPTION" ? (
                 <div className="border-t border-border pt-5">
                   <h3 className="font-semibold text-sm mb-3">Resolution</h3>
+                  {!canResolve && (
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-muted border border-border text-xs flex items-center gap-2 text-muted-foreground">
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      <span>Read-only — only AP roles (AP Manager / AP Clerk) can resolve exceptions. Current role: <strong>{user.role}</strong>.</span>
+                    </div>
+                  )}
                   <RadioGroup value={resolution} onValueChange={(v) => setResolution(v as Resolution)} className="space-y-2 mb-4">
                     <ResOption value="ppv" id="ppv" title="Accept Variance — Book to PPV" sub="Posts: DR 5300 Purchase Price Variance / CR 2310 AP Accrued" />
                     <ResOption value="reject" id="reject" title="Reject Invoice" sub="Send back to supplier for correction" />
@@ -269,15 +275,21 @@ const ThreeWayMatch = () => {
                     className="mb-3"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    disabled={!canResolve}
                   />
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => { setNotes(""); }}>Cancel</Button>
-                    <Button onClick={submitResolution}>Submit Resolution</Button>
+                    <Button onClick={submitResolution} disabled={!canResolve}>Submit Resolution</Button>
                   </div>
                 </div>
               ) : inv.status === "MATCHED" ? (
-                <div className="border-t border-border pt-5 flex justify-end">
-                  <Button onClick={() => approveMatched(inv.id)}>
+                <div className="border-t border-border pt-5 flex justify-end items-center gap-3">
+                  {!canApprovePay && (
+                    <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" /> Requires AP Manager or Controller/CFO
+                    </span>
+                  )}
+                  <Button onClick={() => approveMatched(inv.id)} disabled={!canApprovePay}>
                     <CheckCircle2 className="h-4 w-4 mr-2" /> Approve for Payment
                   </Button>
                 </div>
