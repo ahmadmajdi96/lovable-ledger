@@ -15,6 +15,9 @@ import {
 import { format } from "date-fns";
 import ManualJournalDialog from "@/components/ManualJournalDialog";
 import { toast } from "sonner";
+import { useRole } from "@/lib/roleStore";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShieldAlert } from "lucide-react";
 
 const sourceTone: Record<string, string> = {
   CoreERP: "bg-primary/10 text-primary border-primary/20",
