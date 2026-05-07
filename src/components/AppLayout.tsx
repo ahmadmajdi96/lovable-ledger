@@ -117,6 +117,9 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
               <div className="text-xs font-semibold truncate text-sidebar-foreground">{user.email}</div>
               <div className="text-[10px] text-sidebar-muted truncate">{roleLabel[user.role]}</div>
             </div>
+            <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={handleLogout} title="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </aside>
