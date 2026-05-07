@@ -60,7 +60,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
             <Calculator className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="font-bold tracking-tight text-sidebar-foreground">CoreAccounting</div>
+            <div className="font-bold tracking-tight text-sidebar-foreground">CORTA Accounting</div>
             <div className="text-[10px] text-sidebar-muted uppercase tracking-wider font-medium">
               Financial Engine · v1.0
             </div>

@@ -1,3 +1,18 @@
-# Welcome to your Lovable project
+# CORTA Accounting
 
-TODO: Document your project here
+Financial engine for retail — double-entry accounting integrated with CoreERP, ExpirySmart, PriceAI, and SmartPOS.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Production with Docker
+
+```bash
+docker compose up -d --build
+```
+
+The app will be available at http://localhost:6003
