@@ -1,12 +1,14 @@
 import { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Calculator, LayoutDashboard, BookOpen, FileText, Receipt, CreditCard,
-  Boxes, Tag, Building2, Percent, BarChart3, Plug, ShieldCheck, FileBarChart2,
+  Boxes, Tag, Building2, Percent, BarChart3, Plug, ShieldCheck, FileBarChart2, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole, roleLabel } from "@/lib/roleStore";
+import { useAuth } from "@/lib/authStore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 type NavItem = { to: string; label: string; icon: any };
 type NavSection = { label: string; items: NavItem[] };
@@ -15,7 +17,7 @@ const sections: NavSection[] = [
   {
     label: "Overview",
     items: [
-      { to: "/", label: "Finance Dashboard", icon: LayoutDashboard },
+      { to: "/app", label: "Finance Dashboard", icon: LayoutDashboard },
       { to: "/cfo-markdowns", label: "CFO Markdown View", icon: BarChart3 },
     ],
   },
@@ -49,6 +51,9 @@ const sections: NavSection[] = [
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user, users, setUser } = useRole();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => { logout(); navigate("/login"); };
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
@@ -76,7 +81,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                   <NavLink
                     key={to}
                     to={to}
-                    end={to === "/"}
+                    end={to === "/app"}
                     className={({ isActive }) => cn("nav-link group", isActive && "nav-link-active")}
                   >
                     <Icon className="nav-icon h-4 w-4 shrink-0 text-sidebar-muted transition-colors group-hover:text-sidebar-accent-foreground" />
@@ -112,6 +117,9 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
               <div className="text-xs font-semibold truncate text-sidebar-foreground">{user.email}</div>
               <div className="text-[10px] text-sidebar-muted truncate">{roleLabel[user.role]}</div>
             </div>
+            <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={handleLogout} title="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </aside>
