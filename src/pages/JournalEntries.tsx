@@ -154,7 +154,7 @@ const JournalEntries = () => {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onPosted={(e) => {
-          const id = postManual(e);
+          const id = postManual(e, user.email);
           setOpen(id);
         }}
       />
@@ -170,7 +170,7 @@ const JournalEntries = () => {
             lines: editing.lines.map((l) => ({ account: l.account, debit: l.debit, credit: l.credit })),
           }}
           onEdited={(e) => {
-            editEntry(editing.id, e);
+            editEntry(editing.id, e, user.email);
             setEditing(null);
           }}
         />
