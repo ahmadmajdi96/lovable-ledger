@@ -9,6 +9,8 @@ import { useMemo, useState } from "react";
 import { apInvoices as seedInvoices, fmtCurrency, APInvoice } from "@/lib/mockData";
 import { CheckCircle2, XCircle, AlertTriangle, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { useRole } from "@/lib/roleStore";
+import { ShieldAlert } from "lucide-react";
 
 type MismatchReason = "PRICE_VARIANCE" | "QTY_VARIANCE" | "TOLERANCE_EXCEEDED" | "MISSING_RECEIPT" | "TAX_MISMATCH";
 type Resolution = "ppv" | "reject" | "hold";
@@ -38,11 +40,14 @@ const reasonTone: Record<MismatchReason, string> = {
 };
 
 const ThreeWayMatch = () => {
+  const { can, user } = useRole();
   const [invoices, setInvoices] = useState<APInvoice[]>(seedInvoices);
   const [filter, setFilter] = useState<"all" | "EXCEPTION" | "MATCHED">("EXCEPTION");
   const [active, setActive] = useState<string | null>(invoices.find((i) => i.status === "EXCEPTION")?.id ?? null);
   const [resolution, setResolution] = useState<Resolution>("ppv");
   const [notes, setNotes] = useState("");
+  const canResolve = can("resolve_ap_exception");
+  const canApprovePay = can("approve_ap_payment");
 
   const visible = useMemo(() => {
     if (filter === "all") return invoices;
