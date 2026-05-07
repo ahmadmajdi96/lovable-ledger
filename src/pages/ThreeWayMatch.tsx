@@ -69,12 +69,20 @@ const ThreeWayMatch = () => {
   const inv = invoices.find((i) => i.id === active);
 
   const approveMatched = (id: string) => {
+    if (!canApprovePay) {
+      toast.error("Permission denied", { description: `${user.role} cannot approve invoices for payment.` });
+      return;
+    }
     setInvoices((p) => p.map((i) => (i.id === id ? { ...i, status: "PAID" } : i)));
     toast.success("Invoice approved for payment", { description: `${id} sent to payment proposal queue.` });
   };
 
   const submitResolution = () => {
     if (!inv) return;
+    if (!canResolve) {
+      toast.error("Permission denied", { description: `${user.role} cannot resolve AP exceptions.` });
+      return;
+    }
     if (resolution === "ppv") {
       setInvoices((p) => p.map((i) => (i.id === inv.id ? { ...i, status: "MATCHED" } : i)));
       toast.success("Variance booked to PPV", {
