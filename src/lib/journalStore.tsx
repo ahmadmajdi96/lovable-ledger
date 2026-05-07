@@ -32,11 +32,11 @@ export interface ExtJournalEntry extends JournalEntry {
 interface Ctx {
   entries: ExtJournalEntry[];
   audit: AuditEvent[];
-  postManual: (e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }) => string;
-  editEntry: (id: string, e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }) => void;
-  reverseEntry: (id: string, reason: string) => void;
-  approveEntry: (id: string) => void;
-  addAttachments: (id: string, files: File[]) => void;
+  postManual: (e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[]; files: File[] }, user: string) => string;
+  editEntry: (id: string, e: { description: string; reference: string; lines: { account: string; debit: number; credit: number }[] }, user: string) => void;
+  reverseEntry: (id: string, reason: string, user: string) => void;
+  approveEntry: (id: string, user: string) => void;
+  addAttachments: (id: string, files: File[], user: string) => void;
 }
 
 const JournalCtx = createContext<Ctx | null>(null);
