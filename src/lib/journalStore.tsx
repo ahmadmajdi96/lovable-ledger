@@ -23,6 +23,8 @@ export interface AuditEvent {
 export interface ExtJournalEntry extends JournalEntry {
   attachments: Attachment[];
   approved: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
   reversedBy?: string; // id of reversal entry
   reverses?: string;
 }
