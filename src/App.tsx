@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
 import { JournalProvider } from "@/lib/journalStore";
+import { RoleProvider } from "@/lib/roleStore";
 import Dashboard from "./pages/Dashboard";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
 import JournalEntries from "./pages/JournalEntries";
