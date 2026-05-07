@@ -1,0 +1,7 @@
+services:
+  corta-accounting:
+    build: .
+    container_name: corta-accounting
+    restart: unless-stopped
+    ports:
+      - "6003:80"
