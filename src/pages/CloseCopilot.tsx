@@ -38,6 +38,22 @@ const CloseCopilot = () => {
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [posted, setPosted] = useState<Set<string>>(new Set());
 
+  type CopilotEvent = {
+    id: string;
+    ts: string;
+    kind: "GENERATED" | "APPROVED" | "UNAPPROVED" | "POSTED" | "CHECK";
+    actor: string;
+    title: string;
+    detail?: string;
+    entryId?: string;
+  };
+  const [timeline, setTimeline] = useState<CopilotEvent[]>([]);
+  const logEvent = (e: Omit<CopilotEvent, "id" | "ts" | "actor">) =>
+    setTimeline((t) => [
+      { id: `EV-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, ts: new Date().toISOString(), actor: user.email, ...e },
+      ...t,
+    ]);
+
   const draftCount = entries.filter((e) => e.status === "DRAFT").length;
   const unapproved = entries.filter((e) => e.source === "Manual" && e.status === "POSTED" && !e.approved).length;
   const invVar = financialKPIs.inventoryGL - financialKPIs.inventoryCalculated;
