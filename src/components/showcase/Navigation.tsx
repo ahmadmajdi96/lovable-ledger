@@ -60,12 +60,6 @@ const Navigation = () => {
             </a>
           ))}
           <Link
-            to="/ar"
-            className="ml-2 text-sm px-3 py-2 rounded-lg border pp-border pp-muted-text hover:text-white"
-          >
-            عربي
-          </Link>
-          <Link
             to="/login"
             className="ml-2 text-sm px-4 py-2 rounded-lg text-white font-semibold shadow-lg"
             style={{ background: "linear-gradient(135deg, hsl(var(--gl-color)), hsl(var(--sub-color)))" }}
