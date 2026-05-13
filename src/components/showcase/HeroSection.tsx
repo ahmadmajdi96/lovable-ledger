@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import heroFactory from "@/assets/hero-factory.jpg";
+import heroFactory from "@/assets/hero-corta-bg.jpg";
 import cortaLogo from "@/assets/corta-logo.png";
 
 const HeroSection = () => (

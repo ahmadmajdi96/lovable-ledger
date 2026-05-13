@@ -1,5 +1,6 @@
 import { modules, personaApps, personaAppsHeroImage } from "./ModuleData";
 import ImpactCard from "./ImpactCard";
+import { ScreenPreviewGrid } from "./ScreenPreviewCard";
 
 const ModuleShowcase = () => (
   <section className="py-16 sm:py-24 px-4 sm:px-6">
@@ -58,6 +59,14 @@ const ModuleShowcase = () => (
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wider pp-muted-text">Live screen previews</h4>
+                <span className="text-xs pp-muted-text">Click any tile to open the live module</span>
+              </div>
+              <ScreenPreviewGrid previews={mod.previewScreens} colorVar={mod.colorVar} />
             </div>
 
             <div className="data-card">
@@ -125,6 +134,13 @@ const ModuleShowcase = () => (
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-xs font-semibold uppercase tracking-wider pp-muted-text mb-4">
+                  Live persona screens
+                </h4>
+                <ScreenPreviewGrid previews={group.previewScreens} colorVar={group.colorVar} />
               </div>
 
               <div className="data-card">

@@ -7,10 +7,21 @@ import {
 } from "lucide-react";
 import type { ElementType } from "react";
 
-import mesDashboard from "@/assets/mes-dashboard.jpg";
-import qmsDashboard from "@/assets/qms-dashboard.jpg";
-import cmsDashboard from "@/assets/cms-dashboard.jpg";
 import edgeApps from "@/assets/edge-apps.jpg";
+
+import shotCfoDashboard from "@/assets/screen-cfo-dashboard.png";
+import shotAiAssistant from "@/assets/screen-ai-assistant.png";
+import shotCloseCopilot from "@/assets/screen-close-copilot.png";
+import shotPeriodClose from "@/assets/screen-period-close.png";
+import shotJournalEntries from "@/assets/screen-journal-entries.png";
+import shotChartOfAccounts from "@/assets/screen-chart-of-accounts.png";
+import shotAccountsPayable from "@/assets/screen-accounts-payable.png";
+import shotThreeWayMatch from "@/assets/screen-three-way-match.png";
+import shotAccountsReceivable from "@/assets/screen-accounts-receivable.png";
+import shotCfoMarkdowns from "@/assets/screen-cfo-markdowns.png";
+
+import type { ScreenPreview } from "./ScreenPreviewCard";
+export type { ScreenPreview } from "./ScreenPreviewCard";
 
 export interface ModuleFeature { icon: ElementType; title: string; desc: string }
 export interface ImpactMetric { icon: ElementType; metric: string; label: string; description: string }
@@ -18,10 +29,12 @@ export interface ModuleData {
   id: string; title: string; subtitle: string; description: string;
   image: string; colorVar: string;
   features: ModuleFeature[]; screens: string[]; impact: ImpactMetric[];
+  previewScreens: ScreenPreview[];
 }
 export interface PersonaAppGroup {
   category: string; colorVar: string;
   apps: ModuleFeature[]; screens: string[]; impact: ImpactMetric[];
+  previewScreens: ScreenPreview[];
 }
 
 export const modules: ModuleData[] = [
@@ -31,7 +44,7 @@ export const modules: ModuleData[] = [
     subtitle: "General Ledger & Period Close",
     description:
       "Double-entry general ledger with auto-posted journals from every connected system, AI-assisted month-end close, role-based approvals, and a tamper-evident audit trail. Closes in days, not weeks — with the evidence package already assembled for your auditor.",
-    image: mesDashboard,
+    image: shotPeriodClose,
     colorVar: "--gl-color",
     impact: [
       { icon: Clock, metric: "↓ 70%", label: "Faster Month-End", description: "AI-drafted checklist plus auto-posted journals shrink the close from 2 weeks to 3 business days." },
@@ -57,6 +70,11 @@ export const modules: ModuleData[] = [
       "P&L Statement", "Balance Sheet", "Cash Flow", "Close Package Export", "Inter-Company",
       "Reversals", "Recurring Schedules", "GL Drilldown", "Journal Reports", "Notifications",
     ],
+    previewScreens: [
+      { id: "gl-period-close", title: "Period Close — May 2026", caption: "Live blocking checklist with 4 pending items, drill-downs and one-click PDF/Excel export.", image: shotPeriodClose, route: "/period-close", role: "Controller" },
+      { id: "gl-journal-entries", title: "Journal Entries Stream", caption: "Auto-posted entries from CoreERP, ExpirySmart, PriceAI & SmartPOS — every line attaches an audit trail.", image: shotJournalEntries, route: "/journal-entries", role: "GL" },
+      { id: "gl-chart-of-accounts", title: "Chart of Accounts", caption: "Multi-dimensional CoA across Company · Department · Store · Product Category with live balances.", image: shotChartOfAccounts, route: "/chart-of-accounts", role: "Controller" },
+    ],
   },
   {
     id: "subledgers",
@@ -64,7 +82,7 @@ export const modules: ModuleData[] = [
     subtitle: "AP / AR / Inventory / Markdown / Fixed Assets / Tax",
     description:
       "Six fully-reconciled subledgers feeding the GL in real time. AP 3-way match with an exception queue, AR aging and collections, inventory valuation tied to ExpirySmart, markdown reserve true-ups, fixed-asset depreciation schedules, and per-jurisdiction tax management.",
-    image: qmsDashboard,
+    image: shotAccountsPayable,
     colorVar: "--sub-color",
     impact: [
       { icon: Target, metric: "↑ 92%", label: "Auto-Matched Invoices", description: "ML-based 3-way match reconciles POs, GRNs and invoices across fuzzy variations — only true exceptions hit the queue." },
@@ -92,6 +110,11 @@ export const modules: ModuleData[] = [
       "Fixed Assets", "Asset Detail", "Depreciation Schedule",
       "Tax Management", "Tax Reconciliation",
     ],
+    previewScreens: [
+      { id: "sub-ap", title: "Accounts Payable", caption: "Procurement-to-payment with auto 3-way match, variance flags, payment proposals & supplier discounts.", image: shotAccountsPayable, route: "/accounts-payable", role: "AP Manager" },
+      { id: "sub-3wm", title: "3-Way Match Exceptions", caption: "Mismatches routed by reason code with tolerance config — only AP roles can resolve, with full audit history.", image: shotThreeWayMatch, route: "/three-way-match", role: "AP" },
+      { id: "sub-ar", title: "Accounts Receivable", caption: "B2B aging, dunning queue & cash application — AR Manager scope-locked write-offs and collections.", image: shotAccountsReceivable, route: "/accounts-receivable", role: "AR Manager" },
+    ],
   },
   {
     id: "ai",
@@ -99,7 +122,7 @@ export const modules: ModuleData[] = [
     subtitle: "AI Period-Close Copilot · CFO Conversational Insights",
     description:
       "Embedded AI at every layer of the close. The Period-Close Copilot drafts the checklist and proposes balanced journal entries with audit-ready rationale. The CFO Insights Assistant answers plain-English questions and drills you straight into the source rows.",
-    image: cmsDashboard,
+    image: shotCloseCopilot,
     colorVar: "--ai-color",
     impact: [
       { icon: Brain, metric: "≥ 90%", label: "AI Draft Accuracy", description: "Suggested entries (depreciation, rent, markdown true-ups) ship with confidence scores and source references — most post on the first review." },
@@ -123,6 +146,11 @@ export const modules: ModuleData[] = [
       "Smart Match Queue", "Confidence Scoring", "AI Explanations",
       "CFO Drill-down", "Conversational Source Links", "Copilot Status",
     ],
+    previewScreens: [
+      { id: "ai-copilot", title: "Period-Close Copilot", caption: "AI-drafted checklist plus suggested entries with confidence scores and rationale — review, approve, post.", image: shotCloseCopilot, route: "/close-copilot", role: "CFO" },
+      { id: "ai-assistant", title: "CFO Insights Assistant", caption: "Plain-English chat over the live ledger. Every answer cites journals, markdowns and reconciliations.", image: shotAiAssistant, route: "/ai-assistant", role: "CFO" },
+      { id: "ai-markdowns", title: "AI Markdown Performance", caption: "PriceAI-driven recovery, waste-avoided and net-win analytics with daily true-ups posted to the GL.", image: shotCfoMarkdowns, route: "/cfo-markdowns", role: "CFO" },
+    ],
   },
 ];
 
@@ -144,6 +172,11 @@ export const personaApps: PersonaAppGroup[] = [
       "PA2: Approval Queue", "PA2: Reconciliation Tie-Outs", "PA2: Recurring Schedules",
       "PA3: Notification Center", "PA3: Blocking Item Alerts",
     ],
+    previewScreens: [
+      { id: "pa-cfo", title: "PA1 · CFO Workspace", caption: "Finance dashboard with role banner, masked KPIs, period-close status and AI insights at a glance.", image: shotCfoDashboard, route: "/app", role: "CFO" },
+      { id: "pa-controller", title: "PA2 · Controller Workbench", caption: "Period-close blockers, approval queue and recurring schedules — controller-only review surface.", image: shotPeriodClose, route: "/period-close", role: "Controller" },
+      { id: "pa-insights", title: "PA1 · Insights Chat", caption: "Conversational drill-down into journals, markdowns and reconciliations with source citations.", image: shotAiAssistant, route: "/ai-assistant", role: "CFO" },
+    ],
   },
   {
     category: "Subledger Operator Apps",
@@ -162,6 +195,11 @@ export const personaApps: PersonaAppGroup[] = [
       "PA5: Invoice Intake", "PA5: Line Match",
       "PA6: AR Aging", "PA6: Dunning Queue", "PA6: Cash Application",
     ],
+    previewScreens: [
+      { id: "pa-ap-mgr", title: "PA4 · AP Manager", caption: "Exception queue with reason codes, tolerance overrides and payment-run approvals — AP-only.", image: shotThreeWayMatch, route: "/three-way-match", role: "AP Manager" },
+      { id: "pa-ap-clerk", title: "PA5 · AP Clerk", caption: "Invoice intake & line-match resolution with read-only access to payment approvals.", image: shotAccountsPayable, route: "/accounts-payable", role: "AP Clerk" },
+      { id: "pa-ar-mgr", title: "PA6 · AR Manager", caption: "Aging, dunning and cash application — write-offs and collections scoped to AR Manager.", image: shotAccountsReceivable, route: "/accounts-receivable", role: "AR Manager" },
+    ],
   },
   {
     category: "Audit & Read-Only Apps",
@@ -179,6 +217,11 @@ export const personaApps: PersonaAppGroup[] = [
       "PA7: Audit Trail", "PA7: Journal Browser", "PA7: Close Package Download",
       "PA8: Anomaly Drill-down", "PA8: Actor Timeline",
       "PA9: Masked KPIs", "PA9: Mask Notice", "PA9: Escalation Request",
+    ],
+    previewScreens: [
+      { id: "pa-auditor", title: "PA7 · Auditor Read-Only", caption: "Browse posted journals, attachments and the immutable audit trail — export only, no posting.", image: shotJournalEntries, route: "/journal-entries", role: "Auditor" },
+      { id: "pa-investigation", title: "PA8 · Investigation View", caption: "Drill from any AI-flagged anomaly into supporting journals, source events and actor timelines.", image: shotChartOfAccounts, route: "/chart-of-accounts", role: "Auditor" },
+      { id: "pa-masked", title: "PA9 · Masked Operations View", caption: "Operational view with sensitive amounts redacted and a clear escalation path to request unmasking.", image: shotCfoMarkdowns, route: "/cfo-markdowns", role: "Read-Only" },
     ],
   },
 ];
