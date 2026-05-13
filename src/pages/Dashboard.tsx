@@ -27,14 +27,34 @@ const ALL_PERMS = Object.keys(PERM_LABELS) as Permission[];
 
 const Dashboard = () => {
   const { user, can } = useRole();
+  const { entries } = useJournals();
+  const { canSee, maskCurrency, masked } = useMask();
+
+  const draftCount = entries.filter((e) => e.status === "DRAFT").length;
+  const unapprovedManual = entries.filter((e) => e.source === "Manual" && e.status === "POSTED" && !e.approved);
+  const inventoryRec = financialKPIs.inventoryGL === financialKPIs.inventoryCalculated;
+  const reserveRec = financialKPIs.reserveGL === financialKPIs.reserveCalculated;
+
+  const blockers = [
+    !inventoryRec && { id: "inv", task: "Inventory subledger reconciliation", to: "/period-close" },
+    !reserveRec && { id: "res", task: "Markdown reserve reconciliation", to: "/period-close" },
+    draftCount > 0 && { id: "drafts", task: `${draftCount} draft journal(s) not posted`, to: "/journal-entries" },
+    unapprovedManual.length > 0 && { id: "appr", task: `${unapprovedManual.length} manual journal(s) awaiting approval`, to: "/journal-entries" },
+    { id: "depr", task: "Monthly depreciation not posted", to: "/close-copilot" },
+    { id: "bank", task: "Bank reconciliation pending", to: "/period-close" },
+    { id: "signoff", task: "CFO sign-off on financial statements", to: "/period-close" },
+  ].filter(Boolean) as { id: string; task: string; to: string }[];
+
+  const totalSteps = 11;
+  const closePct = Math.round(((totalSteps - blockers.length) / totalSteps) * 100);
 
   const kpis = [
-    { label: "Markdowns MTD", value: fmtCurrency(financialKPIs.totalMarkdowns), icon: TrendingDown, tone: "warning" as const },
-    { label: "Waste Avoided", value: fmtCurrency(financialKPIs.wasteAvoided), icon: CheckCircle2, tone: "success" as const },
-    { label: "Net Revenue Recovered", value: fmtCurrency(financialKPIs.netRevenueRecovered), icon: Wallet },
-    { label: "Gross Margin (post-MD)", value: fmtPct(financialKPIs.grossMarginAfterMarkdown), icon: Receipt },
-    { label: "Inventory GL Balance", value: fmtCurrency(financialKPIs.inventoryGL), icon: BookOpen },
-    { label: "Markdown Reserve", value: fmtCurrency(financialKPIs.reserveGL), icon: AlertTriangle, tone: "warning" as const },
+    { label: "Markdowns MTD", value: maskCurrency(financialKPIs.totalMarkdowns), icon: TrendingDown, tone: "warning" as const },
+    { label: "Waste Avoided", value: maskCurrency(financialKPIs.wasteAvoided), icon: CheckCircle2, tone: "success" as const },
+    { label: "Net Revenue Recovered", value: maskCurrency(financialKPIs.netRevenueRecovered), icon: Wallet },
+    { label: "Gross Margin (post-MD)", value: canSee ? fmtPct(financialKPIs.grossMarginAfterMarkdown) : "••••", icon: Receipt },
+    { label: "Inventory GL Balance", value: maskCurrency(financialKPIs.inventoryGL), icon: BookOpen },
+    { label: "Markdown Reserve", value: maskCurrency(financialKPIs.reserveGL), icon: AlertTriangle, tone: "warning" as const },
   ];
 
   const recent = journalEntries.slice(0, 5);
