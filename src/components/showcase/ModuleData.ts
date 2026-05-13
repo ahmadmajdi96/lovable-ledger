@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import type { ElementType } from "react";
 
-import edgeApps from "@/assets/edge-apps.jpg";
-
 import shotCfoDashboard from "@/assets/screen-cfo-dashboard.png";
 import shotAiAssistant from "@/assets/screen-ai-assistant.png";
 import shotCloseCopilot from "@/assets/screen-close-copilot.png";
@@ -226,4 +224,4 @@ export const personaApps: PersonaAppGroup[] = [
   },
 ];
 
-export const personaAppsHeroImage = edgeApps;
+export const personaAppsHeroImage = shotCfoDashboard;
