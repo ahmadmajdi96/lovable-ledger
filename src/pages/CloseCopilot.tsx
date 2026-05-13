@@ -361,6 +361,52 @@ const CloseCopilot = () => {
               </div>
             </Card>
           </div>
+
+          {/* Audit-trail timeline */}
+          <Card className="p-5 mt-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">AI Copilot audit trail</h3>
+              </div>
+              <Badge variant="outline" className="text-[10px]">{timeline.length} event{timeline.length === 1 ? "" : "s"}</Badge>
+            </div>
+            {timeline.length === 0 ? (
+              <div className="text-xs text-muted-foreground text-center py-6">
+                No copilot activity yet. Generate the draft, approve suggestions and post entries — every action is captured here.
+              </div>
+            ) : (
+              <ol className="relative border-l border-border ml-2 space-y-4">
+                {timeline.map((ev) => {
+                  const meta =
+                    ev.kind === "GENERATED" ? { Icon: Bot, color: "text-primary", bg: "bg-primary/10", label: "DRAFT GENERATED" } :
+                    ev.kind === "APPROVED" ? { Icon: ThumbsUp, color: "text-success", bg: "bg-success/10", label: "APPROVED" } :
+                    ev.kind === "UNAPPROVED" ? { Icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10", label: "UNAPPROVED" } :
+                    ev.kind === "POSTED" ? { Icon: FilePlus2, color: "text-primary", bg: "bg-primary/10", label: "POSTED" } :
+                    { Icon: CheckCircle2, color: "text-muted-foreground", bg: "bg-muted/40", label: "CHECK" };
+                  const { Icon } = meta;
+                  return (
+                    <li key={ev.id} className="ml-6">
+                      <span className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ${meta.bg}`}>
+                        <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
+                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[9px] font-mono">{meta.label}</Badge>
+                        <span className="text-sm font-medium">{ev.title}</span>
+                        {ev.entryId && <span className="text-[10px] font-mono text-muted-foreground">· {ev.entryId}</span>}
+                      </div>
+                      {ev.detail && (
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{ev.detail}</p>
+                      )}
+                      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                        {format(new Date(ev.ts), "PPpp")} · {ev.actor}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </Card>
         </>
       )}
     </>
