@@ -41,13 +41,6 @@ const HeroSection = () => (
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
-        <Link
-          to="/login"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-semibold shadow-lg hover-scale"
-          style={{ background: "linear-gradient(135deg, hsl(var(--gl-color)), hsl(var(--sub-color)))" }}
-        >
-          Try the demo <ArrowRight className="h-4 w-4" />
-        </Link>
         <a
           href="#gl"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border pp-border font-medium hover:border-white/30"
