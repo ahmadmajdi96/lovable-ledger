@@ -22,6 +22,8 @@ import FixedAssets from "./pages/FixedAssets";
 import Tax from "./pages/Tax";
 import CFOMarkdowns from "./pages/CFOMarkdowns";
 import Integrations from "./pages/Integrations";
+import AIAssistant from "./pages/AIAssistant";
+import CloseCopilot from "./pages/CloseCopilot";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,8 @@ const App = () => (
                 <Route path="/fixed-assets" element={<Protected><FixedAssets /></Protected>} />
                 <Route path="/tax" element={<Protected><Tax /></Protected>} />
                 <Route path="/integrations" element={<Protected><Integrations /></Protected>} />
+                <Route path="/ai-assistant" element={<Protected><AIAssistant /></Protected>} />
+                <Route path="/close-copilot" element={<Protected><CloseCopilot /></Protected>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </JournalProvider>

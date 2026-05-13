@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   Calculator, LayoutDashboard, BookOpen, FileText, Receipt, CreditCard,
   Boxes, Tag, Building2, Percent, BarChart3, Plug, ShieldCheck, FileBarChart2, LogOut,
+  Bot, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole, roleLabel } from "@/lib/roleStore";
@@ -19,6 +20,13 @@ const sections: NavSection[] = [
     items: [
       { to: "/app", label: "Finance Dashboard", icon: LayoutDashboard },
       { to: "/cfo-markdowns", label: "CFO Markdown View", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "AI Suite",
+    items: [
+      { to: "/ai-assistant", label: "AI Insights Assistant", icon: Bot },
+      { to: "/close-copilot", label: "Close Copilot", icon: Sparkles },
     ],
   },
   {
