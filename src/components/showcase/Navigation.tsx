@@ -59,13 +59,6 @@ const Navigation = () => {
               {item.label}
             </a>
           ))}
-          <Link
-            to="/login"
-            className="ml-2 text-sm px-4 py-2 rounded-lg text-white font-semibold shadow-lg"
-            style={{ background: "linear-gradient(135deg, hsl(var(--gl-color)), hsl(var(--sub-color)))" }}
-          >
-            Launch app
-          </Link>
         </div>
 
         <button
@@ -90,14 +83,6 @@ const Navigation = () => {
               {item.label}
             </a>
           ))}
-          <Link
-            to="/login"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, hsl(var(--gl-color)), hsl(var(--sub-color)))" }}
-          >
-            Launch app
-          </Link>
         </div>
       )}
     </nav>
