@@ -7,9 +7,6 @@ import {
 } from "lucide-react";
 import type { ElementType } from "react";
 
-import mesDashboard from "@/assets/mes-dashboard.jpg";
-import qmsDashboard from "@/assets/qms-dashboard.jpg";
-import cmsDashboard from "@/assets/cms-dashboard.jpg";
 import edgeApps from "@/assets/edge-apps.jpg";
 
 import shotCfoDashboard from "@/assets/screen-cfo-dashboard.png";
