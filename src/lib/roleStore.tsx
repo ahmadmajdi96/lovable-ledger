@@ -65,6 +65,7 @@ export const roleLabel: Record<Role, string> = {
   Controller: "Controller",
   AP_Manager: "AP Manager",
   AP_Clerk: "AP Clerk",
+  AR_Manager: "AR Manager",
   Accountant: "Accountant",
   Viewer: "Viewer",
 };
