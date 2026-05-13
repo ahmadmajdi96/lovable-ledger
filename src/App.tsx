@@ -8,6 +8,7 @@ import { JournalProvider } from "@/lib/journalStore";
 import { RoleProvider } from "@/lib/roleStore";
 import { AuthProvider, useAuth } from "@/lib/authStore";
 import Landing from "./pages/Landing";
+import LandingAr from "./pages/LandingAr";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
@@ -45,6 +46,7 @@ const App = () => (
             <JournalProvider>
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/ar" element={<LandingAr />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/app" element={<Protected><Dashboard /></Protected>} />
                 <Route path="/cfo-markdowns" element={<Protected><CFOMarkdowns /></Protected>} />
