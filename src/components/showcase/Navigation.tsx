@@ -1,14 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Brain, BookOpen, Layers, Bot, Menu, X } from "lucide-react";
+import { Brain, BookOpen, Layers, Bot, Menu, X, Workflow, Sparkles, ShieldCheck } from "lucide-react";
 import cortaLogo from "@/assets/corta-logo.png";
 
 const navItems = [
+  { label: "Architecture", href: "#architecture", icon: Workflow },
   { label: "GL Engine", href: "#gl", icon: BookOpen },
   { label: "Subledgers", href: "#subledgers", icon: Layers },
   { label: "AI Suite", href: "#ai", icon: Brain },
-  { label: "Persona Apps", href: "#personas", icon: Bot },
+  { label: "Personas", href: "#personas", icon: Bot },
+  { label: "Benefits", href: "#benefits", icon: Sparkles },
+  { label: "Standards", href: "#standards", icon: ShieldCheck },
 ];
+
+const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  if (!href.startsWith("#")) return;
+  const id = href.slice(1);
+  const el = document.getElementById(id);
+  if (el) {
+    e.preventDefault();
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.replaceState(null, "", href);
+  }
+};
 
 const Navigation = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -38,7 +52,8 @@ const Navigation = () => {
             <a
               key={item.label}
               href={item.href}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium pp-muted-text hover:text-white transition-colors"
+              onClick={(e) => handleSmoothScroll(e, item.href)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium pp-muted-text hover:text-white transition-colors"
             >
               <item.icon className="w-4 h-4" />
               {item.label}
@@ -68,7 +83,7 @@ const Navigation = () => {
             <a
               key={item.label}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => { handleSmoothScroll(e, item.href); setMobileOpen(false); }}
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium pp-muted-text hover:text-white"
             >
               <item.icon className="w-4 h-4" />

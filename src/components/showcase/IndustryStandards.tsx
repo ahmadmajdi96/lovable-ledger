@@ -12,7 +12,7 @@ const standards = [
 ];
 
 const IndustryStandards = () => (
-  <section className="py-16 sm:py-24 px-4 sm:px-6 border-t pp-border">
+  <section id="standards" className="py-16 sm:py-24 px-4 sm:px-6 border-t pp-border scroll-mt-20">
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-12">
         <h2 className="section-title mb-4">Industry Standards Compliance</h2>
