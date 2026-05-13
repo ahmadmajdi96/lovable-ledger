@@ -1,13 +1,17 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import {
   TrendingDown, Wallet, Receipt, AlertTriangle, CheckCircle2, Activity, Plug, BookOpen,
-  ShieldCheck, Bot, Sparkles, Lock,
+  ShieldCheck, Bot, Sparkles, Lock, EyeOff, Bell, Clock, ChevronRight, Send,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { financialKPIs, journalEntries, integrations, fmtCurrency, fmtPct } from "@/lib/mockData";
+import { financialKPIs, journalEntries, integrations, fmtPct } from "@/lib/mockData";
 import { useRole, roleLabel, type Permission } from "@/lib/roleStore";
+import { useJournals } from "@/lib/journalStore";
+import { useMask } from "@/lib/mask";
+import { toast } from "sonner";
 
 const PERM_LABELS: Record<Permission, string> = {
   approve_journal: "Approve journals",
