@@ -17,7 +17,7 @@ const benefits = [
 ];
 
 const BenefitsSection = () => (
-  <section id="benefits" className="py-16 sm:py-24 px-4 sm:px-6 relative">
+  <section id="benefits" className="py-16 sm:py-24 px-4 sm:px-6 relative scroll-mt-20">
     <div className="absolute inset-0 pp-hero-gradient opacity-50" />
     <div className="relative max-w-7xl mx-auto">
       <div className="text-center mb-16">

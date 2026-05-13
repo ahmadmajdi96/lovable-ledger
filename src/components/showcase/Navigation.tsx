@@ -52,7 +52,8 @@ const Navigation = () => {
             <a
               key={item.label}
               href={item.href}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium pp-muted-text hover:text-white transition-colors"
+              onClick={(e) => handleSmoothScroll(e, item.href)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium pp-muted-text hover:text-white transition-colors"
             >
               <item.icon className="w-4 h-4" />
               {item.label}
@@ -82,7 +83,7 @@ const Navigation = () => {
             <a
               key={item.label}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => { handleSmoothScroll(e, item.href); setMobileOpen(false); }}
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium pp-muted-text hover:text-white"
             >
               <item.icon className="w-4 h-4" />
