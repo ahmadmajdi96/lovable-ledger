@@ -136,6 +136,13 @@ const ModuleShowcase = () => (
                 ))}
               </div>
 
+              <div className="mb-6">
+                <h4 className="text-xs font-semibold uppercase tracking-wider pp-muted-text mb-4">
+                  Live persona screens
+                </h4>
+                <ScreenPreviewGrid previews={group.previewScreens} colorVar={group.colorVar} />
+              </div>
+
               <div className="data-card">
                 <h4 className="text-sm font-semibold uppercase tracking-wider pp-muted-text mb-4">
                   Screens ({group.screens.length})
