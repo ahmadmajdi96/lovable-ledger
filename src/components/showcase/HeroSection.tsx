@@ -41,7 +41,7 @@ const HeroSection = () => (
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
-        <
+        <a
           href="#gl"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border pp-border font-medium hover:border-white/30"
           style={{ background: "hsl(220 22% 11% / 0.6)" }}
