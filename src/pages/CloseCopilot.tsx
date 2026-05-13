@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Brain, CheckCircle2, Circle, AlertTriangle, FileText, ShieldCheck, ChevronRight, Wand2, Lock } from "lucide-react";
+import { Sparkles, Brain, CheckCircle2, Circle, AlertTriangle, FileText, ShieldCheck, ChevronRight, Wand2, Lock, History, Bot, ThumbsUp, FilePlus2 } from "lucide-react";
+import { format } from "date-fns";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
