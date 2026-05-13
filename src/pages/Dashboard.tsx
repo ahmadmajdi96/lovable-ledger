@@ -99,6 +99,86 @@ const Dashboard = () => {
         </div>
       </Card>
 
+      {/* Data masking notice for non-CFO/Controller */}
+      {masked && (
+        <Card className="p-3 mb-6 border-l-4 border-l-warning bg-warning/5 flex items-center gap-3">
+          <EyeOff className="h-4 w-4 text-warning shrink-0" />
+          <div className="flex-1 text-xs">
+            <span className="font-semibold text-warning">Sensitive amounts masked.</span>{" "}
+            <span className="text-muted-foreground">
+              Your role <strong>{roleLabel[user.role]}</strong> does not have permission to view monetary balances. KPI values, journal totals and reconciliation amounts are redacted ({"\u2022\u2022\u2022\u2022\u2022\u2022"}). Switch to a CFO or Controller account to unmask.
+            </span>
+          </div>
+        </Card>
+      )}
+
+      {/* Period close status & notifications */}
+      <Card className="p-5 mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+          <div>
+            <h3 className="font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Period Close Status — May 2026
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Live checklist progress. Notifications prompt approvers when blocking items remain.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-2xl font-bold tabular-nums">{closePct}%</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">complete</div>
+            </div>
+            <Link to="/period-close">
+              <Button variant="outline" size="sm">Open Period Close <ChevronRight className="h-3 w-3 ml-1" /></Button>
+            </Link>
+          </div>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden mb-4">
+          <div className="h-full transition-all" style={{ width: `${closePct}%`, background: "var(--gradient-primary)" }} />
+        </div>
+
+        {blockers.length > 0 ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs font-semibold flex items-center gap-1.5">
+                <Bell className="h-3.5 w-3.5 text-warning" />
+                {blockers.length} blocking item{blockers.length === 1 ? "" : "s"} pending
+              </div>
+              {can("close_period") ? (
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">You are an approver</Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={() => toast.success("Approver notified", { description: `Email sent to CFO & Controller about ${blockers.length} blocking item(s).` })}
+                >
+                  <Send className="h-3 w-3 mr-1" /> Notify approver
+                </Button>
+              )}
+            </div>
+            {blockers.slice(0, 5).map((b) => (
+              <Link
+                key={b.id}
+                to={b.to}
+                className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg border border-warning/20 bg-warning/5 hover:border-warning/40 transition"
+              >
+                <Clock className="h-3.5 w-3.5 text-warning shrink-0" />
+                <span className="flex-1 truncate">{b.task}</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              </Link>
+            ))}
+            {blockers.length > 5 && (
+              <div className="text-[10px] text-muted-foreground pl-1">+ {blockers.length - 5} more pending in Period Close</div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-success">
+            <CheckCircle2 className="h-4 w-4" /> All blocking items resolved — ready to close.
+          </div>
+        )}
+      </Card>
+
       {/* AI shortcuts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Link to="/ai-assistant" className="stat-card flex items-center gap-4 hover:border-primary/40">
