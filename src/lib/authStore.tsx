@@ -13,6 +13,7 @@ export const DEMO_ACCOUNTS = [
   { email: "controller@retailco.com", password: "demo1234", name: "Marcus Webb", role: "Controller" },
   { email: "ap.manager@retailco.com", password: "demo1234", name: "Lin Park", role: "AP Manager" },
   { email: "ap.clerk@retailco.com", password: "demo1234", name: "Diego Ruiz", role: "AP Clerk" },
+  { email: "ar.manager@retailco.com", password: "demo1234", name: "Maya Tan", role: "AR Manager" },
   { email: "accountant@retailco.com", password: "demo1234", name: "Priya Singh", role: "Accountant" },
   { email: "viewer@retailco.com", password: "demo1234", name: "Audit Viewer", role: "Viewer" },
 ];
