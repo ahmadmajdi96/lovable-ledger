@@ -71,13 +71,13 @@ const ScreenPreviewCard = ({ preview, colorVar }: ScreenPreviewCardProps) => {
           className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div
-          className="absolute inset-x-0 bottom-0 h-16"
+          className="absolute inset-x-0 bottom-0 h-12"
           style={{ background: "linear-gradient(180deg, transparent, hsl(220 25% 7% / 0.8))" }}
         />
       </div>
 
       {/* Caption */}
-      <div className="p-4">
+      <div className="p-4" style={{ background: "hsl(220 22% 9%)" }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h4 className="font-semibold text-sm text-foreground truncate">{preview.title}</h4>
