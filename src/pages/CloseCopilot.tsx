@@ -112,6 +112,11 @@ const CloseCopilot = () => {
     setTimeout(() => {
       setGenerated(true);
       setGenerating(false);
+      logEvent({
+        kind: "GENERATED",
+        title: "AI Copilot generated close draft",
+        detail: `${checklist.length} checklist tasks · ${suggested.length} suggested journal entries · avg confidence ${Math.round(suggested.reduce((s, e) => s + e.confidence, 0) / suggested.length)}%.`,
+      });
       toast.success("AI copilot draft ready", {
         description: `${checklist.length} checklist tasks · ${suggested.length} suggested journal entries with audit-ready explanations.`,
       });
@@ -119,9 +124,16 @@ const CloseCopilot = () => {
   };
 
   const toggleApprove = (id: string) => {
+    const entry = suggested.find((s) => s.id === id);
     setApproved((s) => {
       const next = new Set(s);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        logEvent({ kind: "UNAPPROVED", title: `Approval revoked — ${entry?.description ?? id}`, entryId: id });
+      } else {
+        next.add(id);
+        logEvent({ kind: "APPROVED", title: `Approved for posting — ${entry?.description ?? id}`, entryId: id, detail: `Confidence ${entry?.confidence}% · source: ${entry?.source}` });
+      }
       return next;
     });
   };
@@ -141,6 +153,12 @@ const CloseCopilot = () => {
       user.email,
     );
     setPosted((s) => new Set(s).add(e.id));
+    logEvent({
+      kind: "POSTED",
+      title: `Posted journal — ${e.description}`,
+      entryId: e.id,
+      detail: `Audit-ready rationale recorded: ${e.rationale.slice(0, 140)}${e.rationale.length > 140 ? "…" : ""}`,
+    });
     toast.success("Entry posted with audit trail", { description: `${e.description} · rationale recorded.` });
   };
 
