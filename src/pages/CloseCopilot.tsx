@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Brain, CheckCircle2, Circle, AlertTriangle, FileText, ShieldCheck, ChevronRight, Wand2, Lock } from "lucide-react";
+import { Sparkles, Brain, CheckCircle2, Circle, AlertTriangle, FileText, ShieldCheck, ChevronRight, Wand2, Lock, History, Bot, ThumbsUp, FilePlus2 } from "lucide-react";
+import { format } from "date-fns";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,22 @@ const CloseCopilot = () => {
   const [generating, setGenerating] = useState(false);
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [posted, setPosted] = useState<Set<string>>(new Set());
+
+  type CopilotEvent = {
+    id: string;
+    ts: string;
+    kind: "GENERATED" | "APPROVED" | "UNAPPROVED" | "POSTED" | "CHECK";
+    actor: string;
+    title: string;
+    detail?: string;
+    entryId?: string;
+  };
+  const [timeline, setTimeline] = useState<CopilotEvent[]>([]);
+  const logEvent = (e: Omit<CopilotEvent, "id" | "ts" | "actor">) =>
+    setTimeline((t) => [
+      { id: `EV-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, ts: new Date().toISOString(), actor: user.email, ...e },
+      ...t,
+    ]);
 
   const draftCount = entries.filter((e) => e.status === "DRAFT").length;
   const unapproved = entries.filter((e) => e.source === "Manual" && e.status === "POSTED" && !e.approved).length;
@@ -95,6 +112,11 @@ const CloseCopilot = () => {
     setTimeout(() => {
       setGenerated(true);
       setGenerating(false);
+      logEvent({
+        kind: "GENERATED",
+        title: "AI Copilot generated close draft",
+        detail: `${checklist.length} checklist tasks · ${suggested.length} suggested journal entries · avg confidence ${Math.round(suggested.reduce((s, e) => s + e.confidence, 0) / suggested.length)}%.`,
+      });
       toast.success("AI copilot draft ready", {
         description: `${checklist.length} checklist tasks · ${suggested.length} suggested journal entries with audit-ready explanations.`,
       });
@@ -102,9 +124,16 @@ const CloseCopilot = () => {
   };
 
   const toggleApprove = (id: string) => {
+    const entry = suggested.find((s) => s.id === id);
     setApproved((s) => {
       const next = new Set(s);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        logEvent({ kind: "UNAPPROVED", title: `Approval revoked — ${entry?.description ?? id}`, entryId: id });
+      } else {
+        next.add(id);
+        logEvent({ kind: "APPROVED", title: `Approved for posting — ${entry?.description ?? id}`, entryId: id, detail: `Confidence ${entry?.confidence}% · source: ${entry?.source}` });
+      }
       return next;
     });
   };
@@ -124,6 +153,12 @@ const CloseCopilot = () => {
       user.email,
     );
     setPosted((s) => new Set(s).add(e.id));
+    logEvent({
+      kind: "POSTED",
+      title: `Posted journal — ${e.description}`,
+      entryId: e.id,
+      detail: `Audit-ready rationale recorded: ${e.rationale.slice(0, 140)}${e.rationale.length > 140 ? "…" : ""}`,
+    });
     toast.success("Entry posted with audit trail", { description: `${e.description} · rationale recorded.` });
   };
 
@@ -326,6 +361,52 @@ const CloseCopilot = () => {
               </div>
             </Card>
           </div>
+
+          {/* Audit-trail timeline */}
+          <Card className="p-5 mt-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">AI Copilot audit trail</h3>
+              </div>
+              <Badge variant="outline" className="text-[10px]">{timeline.length} event{timeline.length === 1 ? "" : "s"}</Badge>
+            </div>
+            {timeline.length === 0 ? (
+              <div className="text-xs text-muted-foreground text-center py-6">
+                No copilot activity yet. Generate the draft, approve suggestions and post entries — every action is captured here.
+              </div>
+            ) : (
+              <ol className="relative border-l border-border ml-2 space-y-4">
+                {timeline.map((ev) => {
+                  const meta =
+                    ev.kind === "GENERATED" ? { Icon: Bot, color: "text-primary", bg: "bg-primary/10", label: "DRAFT GENERATED" } :
+                    ev.kind === "APPROVED" ? { Icon: ThumbsUp, color: "text-success", bg: "bg-success/10", label: "APPROVED" } :
+                    ev.kind === "UNAPPROVED" ? { Icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10", label: "UNAPPROVED" } :
+                    ev.kind === "POSTED" ? { Icon: FilePlus2, color: "text-primary", bg: "bg-primary/10", label: "POSTED" } :
+                    { Icon: CheckCircle2, color: "text-muted-foreground", bg: "bg-muted/40", label: "CHECK" };
+                  const { Icon } = meta;
+                  return (
+                    <li key={ev.id} className="ml-6">
+                      <span className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ${meta.bg}`}>
+                        <Icon className={`h-3.5 w-3.5 ${meta.color}`} />
+                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[9px] font-mono">{meta.label}</Badge>
+                        <span className="text-sm font-medium">{ev.title}</span>
+                        {ev.entryId && <span className="text-[10px] font-mono text-muted-foreground">· {ev.entryId}</span>}
+                      </div>
+                      {ev.detail && (
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{ev.detail}</p>
+                      )}
+                      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                        {format(new Date(ev.ts), "PPpp")} · {ev.actor}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </Card>
         </>
       )}
     </>
